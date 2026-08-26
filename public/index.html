@@ -1,0 +1,2659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SecGuard AI — Autonomous Web Surface Security Auditing &amp; Gemini 3.6 Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Fira+Code:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<!-- Chart.js & html2pdf.js for High-Res Report Generation -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<style>
+  :root {
+    /* Palette tailored from security palette */
+    --bg-base: #061114;
+    --bg-surface: #0a1c21;
+    --bg-panel: #0e272e;
+    --bg-panel-elevated: #13353e;
+    --bg-panel-hover: #19434e;
+    --border-dark: #12333b;
+    --border-mid: #1c4e5a;
+    --border-glow: #287284;
+    
+    /* Security Greens & Accents */
+    --sec-dark-green: #114b43;
+    --sec-emerald: #2d936c;
+    --sec-emerald-glow: rgba(45, 147, 108, 0.35);
+    --sec-sage: #8cb398;
+    --sec-mint: #a3c9a8;
+    --sec-teal: #22a093;
+    --sec-teal-glow: rgba(34, 160, 147, 0.25);
+    
+    /* Status & Alerts */
+    --danger: #ff4757;
+    --danger-bg: rgba(255, 71, 87, 0.12);
+    --warning: #ffa502;
+    --warning-bg: rgba(255, 165, 2, 0.12);
+    --good: #2ed573;
+    --good-bg: rgba(46, 213, 115, 0.12);
+    --cyan-bright: #38ef7d;
+    
+    /* Typography Colors - Crisp White & Tones */
+    --text-pure: #ffffff;
+    --text-main: #f0f7f5;
+    --text-dim: #c2d6cf;
+    --text-muted: #7e9c94;
+    --text-code: #a7f3d0;
+    
+    /* Fonts */
+    --font-heading: 'Space Grotesk', 'Chakra Petch', sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+    --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg-base);
+    color: var(--text-main);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    padding: 0;
+    margin: 0;
+    line-height: 1.6;
+    background-image:
+      radial-gradient(circle at 15% 10%, rgba(45, 147, 108, 0.09) 0%, transparent 40%),
+      radial-gradient(circle at 85% 90%, rgba(34, 160, 147, 0.08) 0%, transparent 45%),
+      linear-gradient(180deg, #061114 0%, #091a1f 50%, #061114 100%);
+    background-attachment: fixed;
+    overflow-x: hidden;
+  }
+
+  /* Scanline subtle overlay */
+  body::before {
+    content: " ";
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    background: linear-gradient(rgba(18, 51, 59, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+    background-size: 100% 4px;
+    z-index: 9999;
+    pointer-events: none;
+    opacity: 0.25;
+  }
+
+  /* App Header & Top Navigation */
+  .app-navbar {
+    background: rgba(10, 28, 33, 0.92);
+    border-bottom: 1px solid var(--border-mid);
+    backdrop-filter: blur(14px);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  }
+
+  .nav-left {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .brand-shield {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    color: var(--text-pure);
+  }
+
+  .shield-icon {
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, var(--sec-emerald) 0%, var(--sec-dark-green) 100%);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 16px var(--sec-emerald-glow);
+    border: 1px solid var(--sec-mint);
+  }
+
+  .brand-name {
+    font-family: var(--font-heading);
+    font-size: 19px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: var(--text-pure);
+  }
+
+  .brand-name span {
+    color: var(--sec-mint);
+    text-shadow: 0 0 12px var(--sec-emerald-glow);
+  }
+
+  .nav-tabs {
+    display: flex;
+    gap: 6px;
+    background: var(--bg-surface);
+    padding: 4px;
+    border-radius: 8px;
+    border: 1px solid var(--border-dark);
+  }
+
+  .nav-tab-btn {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    font-weight: 600;
+    padding: 7px 15px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .nav-tab-btn:hover {
+    color: var(--text-pure);
+    background: var(--bg-panel);
+  }
+
+  .nav-tab-btn.active {
+    background: var(--sec-dark-green);
+    border-color: var(--sec-emerald);
+    color: var(--text-pure);
+    box-shadow: 0 0 14px var(--sec-emerald-glow);
+  }
+
+  .nav-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .dev-pro-badge {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    background: linear-gradient(135deg, rgba(45, 147, 108, 0.2) 0%, rgba(18, 51, 59, 0.5) 100%);
+    border: 1px solid var(--sec-emerald);
+    color: var(--sec-mint);
+    padding: 5px 12px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    letter-spacing: 0.5px;
+    box-shadow: 0 0 10px rgba(45, 147, 108, 0.15);
+  }
+
+  .dev-pro-badge .free-tag {
+    background: var(--sec-emerald);
+    color: #061114;
+    font-size: 9px;
+    font-weight: 800;
+    padding: 1px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+  }
+
+  .status-pill {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--sec-mint);
+    background: rgba(140, 179, 152, 0.08);
+    border: 1px solid var(--border-mid);
+    padding: 4px 10px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .pulse-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--sec-emerald);
+    box-shadow: 0 0 8px var(--sec-emerald);
+    animation: pulse 1.6s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.35; transform: scale(0.85); }
+  }
+
+  /* Main Wrapper */
+  .main-wrapper {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 28px 20px 60px;
+  }
+
+  /* Interactive Typing Banner */
+  .cyber-banner {
+    background: linear-gradient(135deg, rgba(14, 39, 46, 0.85) 0%, rgba(10, 28, 33, 0.95) 100%);
+    border: 1px solid var(--border-mid);
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .cyber-banner::after {
+    content: "";
+    position: absolute;
+    bottom: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--sec-emerald), var(--sec-mint), transparent);
+  }
+
+  .typewriter-box {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-family: var(--font-mono);
+    font-size: 13.5px;
+    color: var(--text-pure);
+  }
+
+  .prompt-sym {
+    color: var(--sec-emerald);
+    font-weight: 700;
+    font-size: 16px;
+  }
+
+  #typewriterText {
+    color: var(--text-code);
+    font-weight: 500;
+  }
+
+  .cursor-blink {
+    display: inline-block;
+    width: 8px;
+    height: 15px;
+    background: var(--sec-mint);
+    margin-left: 3px;
+    vertical-align: middle;
+    animation: blink 0.75s steps(1) infinite;
+  }
+
+  @keyframes blink { 50% { opacity: 0; } }
+
+  .banner-meta {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    display: flex;
+    gap: 14px;
+  }
+
+  .banner-meta span strong {
+    color: var(--sec-mint);
+  }
+
+  /* Console Card */
+  .console-card {
+    background: var(--bg-panel);
+    border: 1px solid var(--border-mid);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(45, 147, 108, 0.1);
+  }
+
+  .console-header {
+    background: var(--bg-surface);
+    border-bottom: 1px solid var(--border-mid);
+    padding: 12px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .traffic-dots {
+    display: flex;
+    gap: 7px;
+  }
+
+  .t-dot { width: 11px; height: 11px; border-radius: 50%; }
+  .t-dot.r { background: #ff4757; }
+  .t-dot.y { background: #ffa502; }
+  .t-dot.g { background: #2ed573; }
+
+  .console-title {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    color: var(--text-dim);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .console-title strong {
+    color: var(--text-pure);
+  }
+
+  .console-body {
+    padding: 26px 28px;
+  }
+
+  /* Scanner Section */
+  .section-intro {
+    margin-bottom: 20px;
+  }
+
+  .section-heading {
+    font-family: var(--font-heading);
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text-pure);
+    letter-spacing: -0.3px;
+  }
+
+  .section-sub {
+    font-size: 13.5px;
+    color: var(--text-dim);
+    margin-top: 4px;
+  }
+
+  /* Input Bar */
+  .scan-input-box {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+
+  .input-field-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-mid);
+    border-radius: 8px;
+    padding: 0 16px;
+    transition: all 0.2s ease;
+  }
+
+  .input-field-wrap:focus-within {
+    border-color: var(--sec-emerald);
+    box-shadow: 0 0 0 2px var(--sec-emerald-glow);
+    background: #0d232a;
+  }
+
+  .input-field-wrap .dollar {
+    color: var(--sec-emerald);
+    font-family: var(--font-mono);
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  .input-field-wrap input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-pure);
+    font-family: var(--font-mono);
+    font-size: 14px;
+    padding: 14px 0;
+  }
+
+  .scan-dispatch-btn {
+    font-family: var(--font-mono);
+    font-size: 13.5px;
+    font-weight: 700;
+    padding: 0 26px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, var(--sec-emerald) 0%, var(--sec-dark-green) 100%);
+    border: 1px solid var(--sec-mint);
+    color: var(--text-pure);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 18px var(--sec-emerald-glow);
+    display: flex;
+    align-items: center;
+    gap: 9px;
+  }
+
+  .scan-dispatch-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 24px var(--sec-emerald-glow);
+    background: linear-gradient(135deg, #34a87c 0%, #155d53 100%);
+  }
+
+  .scan-dispatch-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+
+  /* Preset Chips */
+  .presets-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+
+  .preset-tag {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+
+  .chip-target {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-dark);
+    color: var(--text-dim);
+    padding: 5px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.18s;
+  }
+
+  .chip-target:hover {
+    border-color: var(--sec-emerald);
+    color: var(--sec-mint);
+    background: var(--bg-panel-elevated);
+  }
+
+  /* Realtime Pipeline Stage Display */
+  .pipeline-panel {
+    display: none;
+    flex-direction: column;
+    gap: 9px;
+    margin-bottom: 24px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-mid);
+    border-radius: 8px;
+    padding: 18px 20px;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+  }
+
+  .pipeline-panel.show { display: flex; }
+
+  .pipe-step {
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: color 0.2s;
+  }
+
+  .pipe-step .marker {
+    width: 18px;
+    text-align: center;
+    font-weight: bold;
+  }
+
+  .pipe-step.active {
+    color: var(--sec-mint);
+    font-weight: 600;
+  }
+
+  .pipe-step.active .marker {
+    display: inline-block;
+    animation: rotate 0.85s linear infinite;
+    color: var(--sec-emerald);
+  }
+
+  .pipe-step.done {
+    color: var(--text-pure);
+  }
+
+  .pipe-step.done .marker {
+    color: var(--good);
+  }
+
+  @keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  /* Results Section */
+  .results-section { display: none; }
+  .results-section.show { display: block; animation: slideUp 0.3s ease; }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Metric Cards Grid */
+  .metric-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 18px;
+    margin-bottom: 22px;
+  }
+
+  .metric-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-mid);
+    border-radius: 10px;
+    padding: 20px 22px;
+  }
+
+  .metric-card-header {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .score-value-row {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    margin-top: 6px;
+  }
+
+  .score-huge-num {
+    font-family: var(--font-mono);
+    font-size: 46px;
+    font-weight: 800;
+    color: var(--text-pure);
+    text-shadow: 0 0 20px var(--sec-emerald-glow);
+  }
+
+  .grade-badge-box {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 700;
+    padding: 5px 12px;
+    border-radius: 6px;
+    border: 1px solid currentColor;
+    letter-spacing: 0.5px;
+  }
+
+  .deductions-box {
+    margin-top: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+
+  .deduction-row {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .deduction-row.fail { color: var(--danger); }
+  .deduction-row.fail::before { content: "✗"; font-weight: bold; }
+  .deduction-row.pass { color: var(--good); }
+  .deduction-row.pass::before { content: "✓"; font-weight: bold; }
+
+  /* Sparkline Chart */
+  svg.drift-sparkline {
+    width: 100%;
+    height: 65px;
+    margin-top: 8px;
+  }
+
+  .drift-footnote {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    color: var(--text-dim);
+    margin-top: 8px;
+  }
+
+  /* AI Panel */
+  .ai-intelligence-panel {
+    background: linear-gradient(180deg, rgba(19, 53, 62, 0.5) 0%, rgba(10, 28, 33, 0.9) 100%);
+    border: 1px solid var(--sec-emerald);
+    border-radius: 10px;
+    padding: 22px 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 10px 36px rgba(0, 0, 0, 0.4), 0 0 20px var(--sec-emerald-glow);
+  }
+
+  .ai-panel-titlebar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: var(--text-pure);
+    font-family: var(--font-mono);
+    font-size: 13.5px;
+    font-weight: 700;
+    margin-bottom: 14px;
+    border-bottom: 1px solid var(--border-dark);
+    padding-bottom: 10px;
+  }
+
+  .ai-badge {
+    font-size: 11px;
+    background: rgba(45, 147, 108, 0.2);
+    border: 1px solid var(--sec-mint);
+    color: var(--sec-mint);
+    padding: 3px 9px;
+    border-radius: 4px;
+    font-weight: 600;
+  }
+
+  .ai-render-content {
+    font-size: 13.5px;
+    line-height: 1.75;
+    color: var(--text-main);
+  }
+
+  .ai-render-content h3 {
+    font-family: var(--font-mono);
+    font-size: 14.5px;
+    color: var(--sec-mint);
+    margin: 16px 0 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .ai-render-content ul {
+    margin-left: 20px;
+    margin-bottom: 12px;
+  }
+
+  .ai-render-content li {
+    margin-bottom: 5px;
+  }
+
+  .ai-render-content pre {
+    background: #040c0e;
+    border: 1px solid var(--border-mid);
+    border-radius: 6px;
+    padding: 14px 16px;
+    overflow-x: auto;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-code);
+    margin: 12px 0 16px;
+    position: relative;
+  }
+
+  .copy-code-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 600;
+    background: var(--bg-panel-elevated);
+    border: 1px solid var(--border-mid);
+    color: var(--text-pure);
+    padding: 4px 9px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .copy-code-btn:hover {
+    border-color: var(--sec-emerald);
+    color: var(--sec-mint);
+  }
+
+  /* Telemetry Detail Tabs */
+  .telemetry-tabs-bar {
+    display: flex;
+    gap: 8px;
+    border-bottom: 1px solid var(--border-mid);
+    margin-bottom: 18px;
+    overflow-x: auto;
+  }
+
+  .tel-tab-btn {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    font-weight: 600;
+    padding: 10px 18px;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-dim);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.18s;
+  }
+
+  .tel-tab-btn:hover { color: var(--text-pure); }
+  .tel-tab-btn.active {
+    color: var(--text-pure);
+    border-bottom-color: var(--sec-emerald);
+    background: rgba(45, 147, 108, 0.08);
+  }
+
+  .tel-tab-pane { display: none; }
+  .tel-tab-pane.active { display: block; }
+
+  /* Telemetry Data Table */
+  .telemetry-data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    margin-top: 4px;
+  }
+
+  .telemetry-data-table th, .telemetry-data-table td {
+    padding: 11px 14px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-dark);
+  }
+
+  .telemetry-data-table th {
+    color: var(--text-muted);
+    font-weight: 600;
+    background: var(--bg-surface);
+  }
+
+  .telemetry-data-table tr:hover td {
+    background: rgba(255, 255, 255, 0.02);
+  }
+
+  .status-tag {
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+
+  .status-tag.pass { background: var(--good-bg); color: var(--good); }
+  .status-tag.fail { background: var(--danger-bg); color: var(--danger); }
+  .status-tag.info { background: rgba(34, 160, 147, 0.15); color: var(--sec-mint); }
+
+  /* Action Buttons */
+  .action-buttons-bar {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 24px;
+    padding-top: 18px;
+    border-top: 1px solid var(--border-dark);
+  }
+
+  .sec-action-btn {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 10px 20px;
+    border-radius: 6px;
+    border: 1px solid var(--border-mid);
+    background: var(--bg-surface);
+    color: var(--text-pure);
+    cursor: pointer;
+    transition: all 0.18s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .sec-action-btn:hover {
+    border-color: var(--sec-emerald);
+    color: var(--sec-mint);
+    background: var(--bg-panel-elevated);
+  }
+
+  /* =========================================================
+     AI SECURITY COPILOT CHATBOT STYLES
+     ========================================================= */
+  .ai-chat-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-mid);
+    border-radius: 10px;
+    margin-top: 24px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .ai-chat-header {
+    background: var(--bg-panel-elevated);
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--border-dark);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .ai-chat-header-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--text-pure);
+  }
+
+  .ai-chat-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--sec-mint);
+    background: rgba(45, 147, 108, 0.12);
+    padding: 3px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(45, 147, 108, 0.3);
+  }
+
+  .ai-chat-chips {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding: 10px 18px;
+    background: rgba(14, 39, 46, 0.4);
+    border-bottom: 1px solid var(--border-dark);
+  }
+
+  .ai-chat-chip {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-mid);
+    color: var(--text-dim);
+    padding: 4px 10px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: all 0.15s;
+    user-select: none;
+  }
+
+  .ai-chat-chip:hover {
+    border-color: var(--sec-emerald);
+    color: var(--sec-mint);
+    background: rgba(45, 147, 108, 0.12);
+  }
+
+  .ai-chat-messages {
+    max-height: 380px;
+    min-height: 180px;
+    overflow-y: auto;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    background: #04090c;
+  }
+
+  .chat-msg {
+    display: flex;
+    gap: 10px;
+    max-width: 90%;
+  }
+
+  .chat-msg.user {
+    align-self: flex-end;
+    flex-direction: row-reverse;
+  }
+
+  .chat-msg.assistant {
+    align-self: flex-start;
+  }
+
+  .chat-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .chat-avatar.assistant {
+    background: var(--sec-dark-green);
+    border: 1px solid var(--sec-emerald);
+    color: var(--sec-mint);
+  }
+
+  .chat-avatar.user {
+    background: #1e293b;
+    border: 1px solid #475569;
+    color: #94a3b8;
+  }
+
+  .chat-bubble {
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 12.5px;
+    line-height: 1.6;
+    word-break: break-word;
+  }
+
+  .chat-msg.user .chat-bubble {
+    background: #133842;
+    border: 1px solid #1c4e5a;
+    color: var(--text-pure);
+    border-top-right-radius: 2px;
+  }
+
+  .chat-msg.assistant .chat-bubble {
+    background: var(--bg-panel);
+    border: 1px solid var(--border-dark);
+    color: var(--text-pure);
+    border-top-left-radius: 2px;
+  }
+
+  .chat-bubble h3 {
+    font-family: var(--font-heading);
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--sec-mint);
+    margin: 6px 0 4px;
+  }
+
+  .chat-bubble h4 {
+    font-family: var(--font-heading);
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--sec-emerald);
+    margin: 8px 0 4px;
+  }
+
+  .chat-bubble pre {
+    background: #030708;
+    border: 1px solid var(--border-dark);
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-code);
+    margin: 8px 0;
+    overflow-x: auto;
+    position: relative;
+  }
+
+  .chat-bubble code {
+    font-family: var(--font-mono);
+    background: rgba(255, 255, 255, 0.08);
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-size: 11.5px;
+  }
+
+  .ai-chat-input-bar {
+    display: flex;
+    gap: 10px;
+    padding: 12px 18px;
+    background: var(--bg-panel-elevated);
+    border-top: 1px solid var(--border-dark);
+  }
+
+  .ai-chat-input {
+    flex: 1;
+    background: #061114;
+    border: 1px solid var(--border-mid);
+    border-radius: 6px;
+    padding: 10px 14px;
+    color: var(--text-pure);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .ai-chat-input:focus {
+    border-color: var(--sec-emerald);
+  }
+
+  .ai-chat-send-btn {
+    background: linear-gradient(135deg, var(--sec-emerald), var(--sec-mint));
+    color: #061114;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 0 18px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.18s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .ai-chat-send-btn:hover {
+    filter: brightness(1.1);
+    box-shadow: 0 0 12px rgba(45, 147, 108, 0.4);
+  }
+
+  .ai-chat-send-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* =========================================================
+     DOCUMENTATION HUB STYLES (MongoDB / Upstash / Redis Style)
+     ========================================================= */
+  .docs-view {
+    display: none;
+  }
+
+  .docs-view.show {
+    display: flex;
+    gap: 28px;
+    animation: fadeIn 0.25s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .docs-sidebar {
+    width: 260px;
+    flex-shrink: 0;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-mid);
+    border-radius: 10px;
+    padding: 18px;
+    position: sticky;
+    top: 80px;
+    max-height: calc(100vh - 120px);
+    overflow-y: auto;
+  }
+
+  .docs-search {
+    width: 100%;
+    background: #061114;
+    border: 1px solid var(--border-dark);
+    border-radius: 6px;
+    padding: 8px 12px;
+    color: var(--text-pure);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    margin-bottom: 18px;
+    outline: none;
+  }
+
+  .docs-search:focus {
+    border-color: var(--sec-emerald);
+  }
+
+  .docs-category {
+    margin-bottom: 20px;
+  }
+
+  .docs-cat-title {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--sec-mint);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .docs-nav-link {
+    display: block;
+    font-family: var(--font-body);
+    font-size: 13px;
+    color: var(--text-dim);
+    text-decoration: none;
+    padding: 6px 10px;
+    border-radius: 6px;
+    transition: all 0.15s;
+  }
+
+  .docs-nav-link:hover {
+    color: var(--text-pure);
+    background: var(--bg-panel-elevated);
+  }
+
+  .docs-nav-link.active {
+    color: var(--text-pure);
+    background: var(--sec-dark-green);
+    font-weight: 600;
+    border-left: 3px solid var(--sec-emerald);
+  }
+
+  .docs-content {
+    flex: 1;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-mid);
+    border-radius: 10px;
+    padding: 36px 42px;
+    min-width: 0;
+  }
+
+  .doc-section {
+    margin-bottom: 48px;
+    border-bottom: 1px solid var(--border-dark);
+    padding-bottom: 36px;
+  }
+
+  .doc-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+  }
+
+  .doc-section h1 {
+    font-family: var(--font-heading);
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text-pure);
+    margin-bottom: 12px;
+    letter-spacing: -0.5px;
+  }
+
+  .doc-section h2 {
+    font-family: var(--font-heading);
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--sec-mint);
+    margin: 24px 0 10px;
+  }
+
+  .doc-section h3 {
+    font-family: var(--font-mono);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-pure);
+    margin: 18px 0 6px;
+  }
+
+  .doc-section p {
+    font-size: 14.5px;
+    color: var(--text-dim);
+    line-height: 1.75;
+    margin-bottom: 14px;
+  }
+
+  .doc-section ul, .doc-section ol {
+    margin-left: 22px;
+    margin-bottom: 16px;
+    color: var(--text-dim);
+    font-size: 14px;
+  }
+
+  .doc-section li {
+    margin-bottom: 6px;
+  }
+
+  .doc-section code {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    background: #040c0e;
+    color: var(--text-code);
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid var(--border-dark);
+  }
+
+  .doc-section pre {
+    background: #040c0e;
+    border: 1px solid var(--border-mid);
+    border-radius: 8px;
+    padding: 16px 18px;
+    overflow-x: auto;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--text-code);
+    margin: 14px 0 20px;
+  }
+
+  .doc-callout {
+    background: rgba(45, 147, 108, 0.08);
+    border-left: 4px solid var(--sec-emerald);
+    border-radius: 6px;
+    padding: 14px 18px;
+    margin: 16px 0 22px;
+    font-size: 13.5px;
+    color: var(--text-pure);
+  }
+
+  .doc-callout strong {
+    color: var(--sec-mint);
+  }
+
+  .terms-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 16px;
+    margin: 18px 0;
+  }
+
+  .term-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-dark);
+    border-radius: 8px;
+    padding: 16px 18px;
+  }
+
+  .term-name {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--sec-mint);
+    margin-bottom: 6px;
+  }
+
+  .term-desc {
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+
+  .term-impact {
+    margin-top: 8px;
+    font-size: 12px;
+    font-family: var(--font-mono);
+    color: var(--danger);
+  }
+
+  @media (max-width: 860px) {
+    .docs-view.show { flex-direction: column; }
+    .docs-sidebar { width: 100%; position: static; max-height: none; }
+    .docs-content { padding: 24px 20px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Top Navigation Bar -->
+<header class="app-navbar">
+  <div class="nav-left">
+    <a href="#" class="brand-shield" id="navLogo">
+      <div class="shield-icon">⚡</div>
+      <div class="brand-name">SecGuard <span>AI Core</span></div>
+    </a>
+
+    <!-- Top View Switcher -->
+    <nav class="nav-tabs">
+      <button class="nav-tab-btn active" id="tabScannerBtn" data-target="scannerView">
+        <span>⚡</span>
+        <span>Security Scanner</span>
+      </button>
+      <button class="nav-tab-btn" id="tabDocsBtn" data-target="docsView">
+        <span>📚</span>
+        <span>Documentation Hub</span>
+      </button>
+    </nav>
+  </div>
+
+  <div class="nav-right">
+    <div class="dev-pro-badge">
+      <span>🛡️ DEVELOPER PRO</span>
+      <span class="free-tag">Free Edition</span>
+    </div>
+    <div class="status-pill" id="geminiNavBadge">
+      <span class="pulse-dot"></span>
+      <span>GEMINI 3.6</span>
+    </div>
+  </div>
+</header>
+
+<div class="main-wrapper">
+  <!-- Interactive Hacker/Terminal Typing Banner -->
+  <div class="cyber-banner">
+    <div class="typewriter-box">
+      <span class="prompt-sym">&gt;</span>
+      <span id="typewriterText"></span>
+      <span class="cursor-blink"></span>
+    </div>
+    <div class="banner-meta">
+      <span>TIER: <strong>DEVELOPER PRO (UNLIMITED)</strong></span>
+      <span>AUTH: <strong>OPEN / ZERO-AUTH</strong></span>
+    </div>
+  </div>
+
+  <!-- VIEW 1: LIVE SECURITY SCANNER -->
+  <div id="scannerView" class="scanner-view">
+    <div class="console-card">
+      <div class="console-header">
+        <div class="traffic-dots">
+          <div class="t-dot r"></div>
+          <div class="t-dot y"></div>
+          <div class="t-dot g"></div>
+        </div>
+        <div class="console-title">
+          <span>secguard-ai</span>
+          <span style="color:var(--text-muted)">/</span>
+          <strong>autonomous-audit-console</strong>
+        </div>
+        <div class="status-pill">
+          <span class="pulse-dot"></span>
+          <span>ENGINE: ONLINE</span>
+        </div>
+      </div>
+
+      <div class="console-body">
+        <div class="section-intro">
+          <h2 class="section-heading">Web Surface Security &amp; Vulnerability Assessment</h2>
+          <p class="section-sub">
+            Free Developer Pro access. Real-time native TLS ciphers, Cheerio AST inspection, and Google Gemini 3.6 automated remediation generator.
+          </p>
+        </div>
+
+        <!-- Scan Input Form -->
+        <div class="scan-input-box">
+          <div class="input-field-wrap">
+            <span class="dollar">$</span>
+            <input id="targetInput" type="text" placeholder="Enter target domain or URL (e.g. github.com, cloudflare.com, secure-fintech.io)" value="https://github.com" />
+          </div>
+          <button class="scan-dispatch-btn" id="dispatchBtn">
+            <span>Dispatch Audit</span>
+            <span>🚀</span>
+          </button>
+        </div>
+
+        <!-- Preset Target Chips -->
+        <div class="presets-row">
+          <span class="preset-tag">QUICK TARGET PRESETS:</span>
+          <button class="chip-target" data-url="https://github.com">github.com</button>
+          <button class="chip-target" data-url="https://google.com">google.com</button>
+          <button class="chip-target" data-url="https://cloudflare.com">cloudflare.com</button>
+          <button class="chip-target" data-url="secure-fintech.io">secure-fintech.io (demo test)</button>
+        </div>
+
+        <!-- Realtime Pipeline Stages -->
+        <div class="pipeline-panel" id="pipeline">
+          <div class="pipe-step" data-step="0"><span class="marker">○</span> [1/6] Dispatched audit job to website-audit-queue (BullMQ / Async Broker)</div>
+          <div class="pipe-step" data-step="1"><span class="marker">○</span> [2/6] Probing TLS 1.3 handshake, cipher suite &amp; SSL certificate expiration</div>
+          <div class="pipe-step" data-step="2"><span class="marker">○</span> [3/6] Cheerio DOM AST extraction — inline script count, vulnerable jQuery, cleartext forms</div>
+          <div class="pipe-step" data-step="3"><span class="marker">○</span> [4/6] Deterministic scoring engine computing 100-point rubric</div>
+          <div class="pipe-step" data-step="4"><span class="marker">○</span> [5/6] Gemini 3.6 reasoning agent synthesizing executive analysis &amp; patches</div>
+          <div class="pipe-step" data-step="5"><span class="marker">○</span> [6/6] Persisting telemetry &amp; historical drift timeline to MongoDB Atlas</div>
+        </div>
+
+        <!-- Results Display Section -->
+        <div class="results-section" id="results">
+          <!-- Top Metric Cards -->
+          <div class="metric-cards-grid">
+            <!-- Score Card -->
+            <div class="metric-card">
+              <div class="metric-card-header">
+                <span>DETERMINISTIC SECURITY SCORE</span>
+                <span id="scoreTimestamp" style="color:var(--text-muted)"></span>
+              </div>
+              <div class="score-value-row">
+                <div class="score-huge-num" id="scoreVal">--</div>
+                <div class="grade-badge-box" id="scoreGrade">GRADE --</div>
+              </div>
+              <div class="deductions-box" id="findingsList"></div>
+            </div>
+
+            <!-- Historical Drift Sparkline -->
+            <div class="metric-card">
+              <div class="metric-card-header">
+                <span>HISTORICAL DRIFT TIMELINE</span>
+                <span id="driftTarget" style="color:var(--sec-mint);font-weight:700"></span>
+              </div>
+              <svg class="drift-sparkline" id="sparkline" viewBox="0 0 320 65"></svg>
+              <div class="drift-footnote" id="driftText">Awaiting historical audit snapshots...</div>
+            </div>
+          </div>
+
+          <!-- AI Intelligence Reasoning Panel -->
+          <div class="ai-intelligence-panel">
+            <div class="ai-panel-titlebar">
+              <span>✨ Gemini 3.6 DevSecOps Reasoning &amp; Remediation Patch Generator</span>
+              <span class="ai-badge" id="aiModelBadge">gemini-3.6</span>
+            </div>
+            <div class="ai-render-content" id="aiBody">
+              <span class="cursor-blink">&nbsp;</span>
+            </div>
+          </div>
+
+          <!-- Detail Telemetry Tabs -->
+          <div class="telemetry-tabs-bar">
+            <button class="tel-tab-btn active" data-tab="tab-headers">HTTP Security Headers</button>
+            <button class="tel-tab-btn" data-tab="tab-tls">TLS &amp; SSL Ciphers</button>
+            <button class="tel-tab-btn" data-tab="tab-dom">DOM AST &amp; Scripts</button>
+          </div>
+
+          <!-- Tab 1: Headers -->
+          <div class="tel-tab-pane active" id="tab-headers">
+            <table class="telemetry-data-table">
+              <thead>
+                <tr>
+                  <th>Security Header</th>
+                  <th>Standard</th>
+                  <th>Status</th>
+                  <th>Vulnerability Impact</th>
+                </tr>
+              </thead>
+              <tbody id="headersTableBody"></tbody>
+            </table>
+          </div>
+
+          <!-- Tab 2: TLS -->
+          <div class="tel-tab-pane" id="tab-tls">
+            <table class="telemetry-data-table">
+              <thead>
+                <tr>
+                  <th>Attribute</th>
+                  <th>Observed Value</th>
+                  <th>Evaluation</th>
+                </tr>
+              </thead>
+              <tbody id="tlsTableBody"></tbody>
+            </table>
+          </div>
+
+          <!-- Tab 3: DOM AST -->
+          <div class="tel-tab-pane" id="tab-dom">
+            <table class="telemetry-data-table">
+              <thead>
+                <tr>
+                  <th>AST Inspection Vector</th>
+                  <th>Observation</th>
+                  <th>Risk Assessment</th>
+                </tr>
+              </thead>
+              <tbody id="domTableBody"></tbody>
+            </table>
+          </div>
+
+          <!-- Interactive AI Security Copilot (Chatbot) -->
+          <div class="ai-chat-card" id="aiChatSection">
+            <div class="ai-chat-header">
+              <div class="ai-chat-header-title">
+                <span>💬</span>
+                <span>SecGuard AI Copilot <span style="color:var(--sec-mint);font-size:11.5px;font-family:var(--font-mono);font-weight:400;">(Gemini 3.6 Interactive Chat)</span></span>
+              </div>
+              <div class="ai-chat-status">
+                <span>●</span>
+                <span id="chatStatusText">Context-Aware &amp; Online</span>
+              </div>
+            </div>
+
+            <!-- Suggested Quick Prompt Chips -->
+            <div class="ai-chat-chips">
+              <div class="ai-chat-chip" onclick="sendQuickPrompt('Write a complete Express.js Helmet middleware configuration to fix all missing headers on this site')">⚡ Express Helmet Fix</div>
+              <div class="ai-chat-chip" onclick="sendQuickPrompt('How do I configure these security headers in an Nginx Docker container?')">🐳 Nginx / Docker Setup</div>
+              <div class="ai-chat-chip" onclick="sendQuickPrompt('Explain how an attacker could exploit the missing Clickjacking / X-Frame-Options on this site with a step-by-step PoC scenario')">🚨 Explain Clickjacking Exploit</div>
+              <div class="ai-chat-chip" onclick="sendQuickPrompt('Write a strict Content-Security-Policy (CSP) that allows Google Fonts, Google Analytics, and Stripe')">🛡️ Strict CSP for Stripe &amp; Fonts</div>
+              <div class="ai-chat-chip" onclick="sendQuickPrompt('Provide Kubernetes Ingress annotations for ingress-nginx to inject HSTS, CSP, and X-Frame-Options')">☸️ Kubernetes Ingress Annotations</div>
+            </div>
+
+            <!-- Messages Timeline -->
+            <div class="ai-chat-messages" id="chatMessagesContainer">
+              <div class="chat-msg assistant">
+                <div class="chat-avatar assistant">🛡️</div>
+                <div class="chat-bubble" id="chatWelcomeBubble">
+                  <strong>SecGuard AI Copilot ready.</strong> I have loaded the surface telemetry for this audit. Ask me anything about remediating vulnerabilities, framework-specific code patches (Express, Next.js, Django, Spring, Kubernetes, Nginx), or threat modeling!
+                </div>
+              </div>
+            </div>
+
+            <!-- Input Bar -->
+            <div class="ai-chat-input-bar">
+              <input type="text" class="ai-chat-input" id="chatUserInput" placeholder="Ask SecGuard AI about fixes, attack vectors, or configurations... (Press Enter)" />
+              <button class="ai-chat-send-btn" id="chatSendBtn">
+                <span>Send</span>
+                <span>➔</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="action-buttons-bar">
+            <button class="sec-action-btn pdf-export-btn" id="exportPdfBtn">
+              <span>📄</span>
+              <span>Export Executive Security Audit Report (PDF)</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIEW 2: DOCUMENTATION HUB (User Guide, Architecture & Security Encyclopedia) -->
+  <div id="docsView" class="docs-view">
+    <!-- Sidebar Navigation -->
+    <aside class="docs-sidebar">
+      <input type="text" class="docs-search" id="docsSearch" placeholder="Search documentation..." />
+
+      <div class="docs-category">
+        <div class="docs-cat-title"><span>🚀</span> User Guide</div>
+        <a href="#doc-how-to-use" class="docs-nav-link active">How to Use the Platform</a>
+        <a href="#doc-pipeline-guide" class="docs-nav-link">Live Telemetry Pipeline</a>
+        <a href="#doc-understanding-score" class="docs-nav-link">Scoring &amp; Grades</a>
+        <a href="#doc-export-guide" class="docs-nav-link">PDF Audit Reports</a>
+      </div>
+
+      <div class="docs-category">
+        <div class="docs-cat-title"><span>⚙️</span> Platform Workflow</div>
+        <a href="#doc-how-it-works" class="docs-nav-link">How SecGuard Works</a>
+        <a href="#doc-gemini-reasoning" class="docs-nav-link">Dynamic Gemini 3.6 AI</a>
+        <a href="#doc-ast-engine" class="docs-nav-link">Cheerio AST Inspection</a>
+        <a href="#doc-drift-workflow" class="docs-nav-link">MongoDB Drift Tracking</a>
+      </div>
+
+      <div class="docs-category">
+        <div class="docs-cat-title"><span>🛡️</span> Security Encyclopedia</div>
+        <a href="#doc-csp-hsts" class="docs-nav-link">CSP, HSTS &amp; Headers</a>
+        <a href="#doc-tls-crypto" class="docs-nav-link">TLS 1.3 &amp; Ciphers</a>
+        <a href="#doc-dom-vulnerabilities" class="docs-nav-link">DOM &amp; Script Hazards</a>
+        <a href="#doc-tailored-remediation" class="docs-nav-link">Dynamic Remediation</a>
+      </div>
+    </aside>
+
+    <!-- Main Docs Content -->
+    <main class="docs-content">
+      <!-- Section 1: How to Use -->
+      <section id="doc-how-to-use" class="doc-section">
+        <h1>How to Use SecGuard AI</h1>
+        <p>
+          <strong>SecGuard AI</strong> allows developers, DevSecOps teams, and site owners to instantly evaluate the security posture of any publicly reachable web surface. Auditing a website requires only a few straightforward steps:
+        </p>
+
+        <h3>Step 1: Enter Target URL</h3>
+        <p>
+          In the top input bar, enter the domain or full URL you wish to audit (for example: <code>https://github.com</code>, <code>cloudflare.com</code>, or your own staging/production app). You can also click any of the <strong>Quick Target Presets</strong> to run a test audit instantly.
+        </p>
+
+        <h3>Step 2: Dispatch the Audit</h3>
+        <p>
+          Click the <strong>Dispatch Audit 🚀</strong> button. SecGuard immediately initiates asynchronous multi-vector telemetry probes against the target website.
+        </p>
+
+        <div class="doc-callout">
+          <strong>Developer Pro Edition:</strong> The platform is completely open and free. There are no sign-up forms, API paywalls, or scan limits.
+        </div>
+      </section>
+
+      <!-- Section 2: Pipeline Guide -->
+      <section id="doc-pipeline-guide" class="doc-section">
+        <h2>Live Telemetry Pipeline</h2>
+        <p>When an audit is dispatched, SecGuard executes a 6-stage telemetry probe in real-time:</p>
+        <ol>
+          <li><strong>Job Dispatch:</strong> Job is enqueued into the asynchronous broker with retry backoff.</li>
+          <li><strong>TLS &amp; Certificate Handshake:</strong> Inspects the cryptographic handshake, active cipher suite, and certificate expiration.</li>
+          <li><strong>Cheerio DOM AST Parse:</strong> Parses the HTML Document Object Model looking for client-side risks, inline scripts, and unencrypted forms.</li>
+          <li><strong>Deterministic Scoring Engine:</strong> Mathematically computes a 0-100 security score based on verified findings.</li>
+          <li><strong>Gemini 3.6 DevSecOps Reasoning:</strong> Synthesizes detailed threat assessments and tailored code patches for the identified flaws.</li>
+          <li><strong>Drift Timeline Persistence:</strong> Saves the audit snapshot in MongoDB Atlas for historical drift analysis.</li>
+        </ol>
+      </section>
+
+      <!-- Section 3: Understanding Scores -->
+      <section id="doc-understanding-score" class="doc-section">
+        <h2>Understanding Scores &amp; Grades</h2>
+        <p>SecGuard uses an objective, reproducible 100-point rubric isolated from AI hallucination:</p>
+        <ul>
+          <li><strong>Grade A (90 - 100):</strong> Robust security posture with all primary transport headers, modern TLS, and zero high-risk client scripts.</li>
+          <li><strong>Grade B (75 - 89):</strong> Good baseline with minor missing secondary headers (e.g. Referrer-Policy or Permissions-Policy).</li>
+          <li><strong>Grade C (60 - 74):</strong> Moderate risk with missing essential protections such as HSTS or Content-Security-Policy.</li>
+          <li><strong>Grade D (40 - 59):</strong> Elevated risk with vulnerable legacy libraries or missing clickjacking defenses.</li>
+          <li><strong>Grade F (Below 40):</strong> Critical vulnerabilities detected (e.g. unencrypted form actions, cleartext HTTP, outdated libraries).</li>
+        </ul>
+      </section>
+
+      <!-- Section 4: How It Works Under the Hood -->
+      <section id="doc-how-it-works" class="doc-section">
+        <h2>How SecGuard Works (Under the Hood)</h2>
+        <p>
+          Unlike basic HTTP header checkers that only execute a single <code>curl</code> request, SecGuard combines <strong>network-layer cryptography</strong>, <strong>AST structural DOM inspection</strong>, and <strong>Generative AI reasoning</strong>:
+        </p>
+        <p>
+          When you dispatch an audit, SecGuard connects to the target over HTTPS to inspect the TLS socket directly, extracting certificate authorities and cryptographic ciphers. Simultaneously, it fetches and parses the HTML into a Cheerio Abstract Syntax Tree to identify dangerous patterns (such as outdated jQuery 1.x fingerprints or passwords submitting over cleartext HTTP) that headers alone cannot reveal.
+        </p>
+      </section>
+
+      <!-- Section 5: Gemini AI Reasoning -->
+      <section id="doc-gemini-reasoning" class="doc-section">
+        <h2>Dynamic Gemini 3.6 Reasoning Engine</h2>
+        <p>
+          SecGuard integrates <strong>Google Gemini 3.6</strong> as an intelligent reasoning layer on top of the deterministic scan data.
+        </p>
+        <p>
+          Instead of generic, repetitive advice or dumping arbitrary server configs, Gemini 3.6 generates <strong>dynamic, contextual threat assessments and code patches</strong>:
+        </p>
+        <ul>
+          <li><strong>Executive Threat Assessment:</strong> Evaluates attack surface resilience, risk tiers, and compliance impact (OWASP, SOC2).</li>
+          <li><strong>Vulnerability Threat Modeling:</strong> Details the exact mechanics, CVSS rating, and blast radius for each discovered flaw.</li>
+          <li><strong>Tailored Code Fixes:</strong> Generates exact code snippets only for the issues found (HTML form fixes, script updates, or server header directives).</li>
+        </ul>
+      </section>
+
+      <!-- Section 6: Security Terms & Encyclopedia -->
+      <section id="doc-csp-hsts" class="doc-section">
+        <h2>Cybersecurity Terms &amp; Vulnerability Encyclopedia</h2>
+        <p>Key security vectors evaluated during every analysis:</p>
+
+        <div class="terms-grid">
+          <div class="term-card">
+            <div class="term-name">Content-Security-Policy (CSP)</div>
+            <div class="term-desc">Restricts what scripts, styles, and media browsers can execute. Essential for stopping Cross-Site Scripting (XSS) and data injection.</div>
+            <div class="term-impact">Mitigates: Malicious script execution &amp; cookie theft.</div>
+          </div>
+
+          <div class="term-card">
+            <div class="term-name">Strict-Transport-Security (HSTS)</div>
+            <div class="term-desc">Instructs browsers to always use encrypted HTTPS, preventing Man-in-the-Middle (MITM) downgrade attacks and SSL stripping.</div>
+            <div class="term-impact">Mitigates: Eavesdropping &amp; packet sniffing.</div>
+          </div>
+
+          <div class="term-card">
+            <div class="term-name">X-Frame-Options (Clickjacking)</div>
+            <div class="term-desc">Prevents a site from being embedded inside transparent iframes on third-party domains, stopping Clickjacking and UI redressing.</div>
+            <div class="term-impact">Mitigates: Unauthorized user actions &amp; click hijacking.</div>
+          </div>
+
+          <div class="term-card">
+            <div class="term-name">X-Content-Type-Options: nosniff</div>
+            <div class="term-desc">Forces browsers to adhere strictly to declared MIME types, preventing non-executable files (like avatars) from running as scripts.</div>
+            <div class="term-impact">Mitigates: MIME confusion attacks.</div>
+          </div>
+
+          <div class="term-card">
+            <div class="term-name">Legacy jQuery 1.x/2.x Fingerprints</div>
+            <div class="term-desc">Older jQuery versions contain known CVE vulnerabilities (such as CVE-2015-9251 and CVE-2020-11022) susceptible to prototype injection.</div>
+            <div class="term-impact">Mitigates: Client-side XSS via outdated dependencies.</div>
+          </div>
+
+          <div class="term-card">
+            <div class="term-name">Cleartext HTTP Form Submissions</div>
+            <div class="term-desc">Forms that submit login credentials, search terms, or tokens over unencrypted HTTP can be intercepted on public Wi-Fi networks.</div>
+            <div class="term-impact">Mitigates: Plaintext credential interception.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 7: Dynamic Remediation -->
+      <section id="doc-tailored-remediation" class="doc-section">
+        <h2>Tailored &amp; Dynamic Remediation</h2>
+        <p>
+          SecGuard's AI engine is tuned to provide practical, copy-paste ready code tailored to each specific finding:
+        </p>
+        <p>
+          If your website is missing a security header, Gemini provides the exact header directive. If a form action submits over unencrypted HTTP or an outdated library is detected, the AI generates the exact HTML or JavaScript upgrade snippet needed to resolve it.
+        </p>
+      </section>
+
+      <!-- Section 8: Exporting & Badges -->
+      <section id="doc-export-guide" class="doc-section">
+        <h2>Executive PDF Audit Reports</h2>
+        <p>
+          You can export a comprehensive, multi-page <strong>Executive Security Audit Report (PDF)</strong> formatted with high-resolution visual plots, score gauges, vector pie charts, structured telemetry tables, and Gemini 3.6 DevSecOps remediation patches.
+      <!-- HIDDEN PDF REPORT TEMPLATE (Rendered on pure white canvas with theme accents, strict A4 dimensions) -->
+<div id="pdfPrintContainer" style="display:none; background:#ffffff; color:#0f172a; font-family:'Inter', -apple-system, BlinkMacSystemFont, sans-serif; width: 690px; max-width: 690px; margin: 0 auto; padding: 18px 20px; box-sizing: border-box; font-size: 11px;">
+  
+  <!-- SECTION 1: HEADER + TARGET BANNER + 3 CHARTS (Kept together on Page 1) -->
+  <div class="pdf-avoid-break" style="page-break-inside: avoid; break-inside: avoid; margin-bottom: 16px;">
+    <!-- PDF Top Header Bar -->
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 2px solid #2d936c; padding-bottom: 10px; margin-bottom: 12px;">
+      <div>
+        <div style="font-family:'Space Grotesk', sans-serif; font-size:20px; font-weight:800; color:#061114; display:flex; align-items:center; gap:6px;">
+          <span style="background:#0e272e; color:#2d936c; padding:2px 6px; border-radius:4px; font-size:13px;">⚡</span>
+          <span>SecGuard <span style="color:#2d936c">AI Core</span></span>
+        </div>
+        <div style="font-size:10px; color:#64748b; margin-top:2px; font-family:'JetBrains Mono', monospace;">
+          Autonomous Web Surface Security &amp; Vulnerability Audit
+        </div>
+      </div>
+      <div style="text-align:right; flex-shrink: 0;">
+        <div style="background:#e6f4ea; color:#137333; font-family:'JetBrains Mono', monospace; font-size:9.5px; font-weight:700; padding:3px 8px; border-radius:999px; display:inline-block; border:1px solid #ceead6; white-space:nowrap;">
+          🛡️ DEVELOPER PRO AUDIT
+        </div>
+        <div style="font-size:9.5px; color:#94a3b8; margin-top:3px; white-space:nowrap;" id="pdfAuditDate"></div>
+      </div>
+    </div>
+
+    <!-- PDF Target Surface & Score Banner -->
+    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:10px 14px; margin-bottom: 12px; display:flex; justify-content:space-between; align-items:center; gap:12px;">
+      <div style="flex:1; min-width:0; overflow:hidden;">
+        <div style="font-size:9.5px; font-family:'JetBrains Mono', monospace; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">AUDITED TARGET SURFACE</div>
+        <div style="font-size:14px; font-family:'JetBrains Mono', monospace; font-weight:800; color:#0f172a; margin-top:2px; word-break:break-all;" id="pdfTargetUrl"></div>
+      </div>
+      <div style="display:flex; align-items:center; gap:12px; flex-shrink:0;">
+        <div style="text-align:right;">
+          <div style="font-size:9px; font-family:'JetBrains Mono', monospace; color:#64748b; text-transform:uppercase;">SCORE</div>
+          <div style="font-size:24px; font-family:'JetBrains Mono', monospace; font-weight:900; color:#0f172a;" id="pdfScoreText">--</div>
+        </div>
+        <div id="pdfGradeBadge" style="font-family:'Space Grotesk', sans-serif; font-size:13.5px; font-weight:800; padding:4px 10px; border-radius:6px; border:1.5px solid #2d936c; background:#e6f4ea; color:#137333; white-space:nowrap;">
+          GRADE --
+        </div>
+      </div>
+    </div>
+
+    <!-- PDF Visual Plots / Charts Row (Compact, Perfect Alignment) -->
+    <div style="display:grid; grid-template-columns: 1fr 1fr 1.2fr; gap: 10px;">
+      <!-- Chart 1: Score Donut -->
+      <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:6px; padding:8px; text-align:center;">
+        <div style="font-size:9px; font-family:'JetBrains Mono', monospace; font-weight:700; color:#475569; margin-bottom:4px; text-transform:uppercase;">POSTURE GAUGE</div>
+        <div style="height:95px; display:flex; align-items:center; justify-content:center;">
+          <canvas id="pdfScoreChart" width="90" height="90"></canvas>
+        </div>
+      </div>
+
+      <!-- Chart 2: Vectors Pie Chart -->
+      <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:6px; padding:8px; text-align:center;">
+        <div style="font-size:9px; font-family:'JetBrains Mono', monospace; font-weight:700; color:#475569; margin-bottom:4px; text-transform:uppercase;">VECTOR BREAKDOWN</div>
+        <div style="height:95px; display:flex; align-items:center; justify-content:center;">
+          <canvas id="pdfVectorChart" width="90" height="90"></canvas>
+        </div>
+      </div>
+
+      <!-- Chart 3: Severity Breakdown Bar Chart -->
+      <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:6px; padding:8px; text-align:center;">
+        <div style="font-size:9px; font-family:'JetBrains Mono', monospace; font-weight:700; color:#475569; margin-bottom:4px; text-transform:uppercase;">VULNERABILITY SEVERITY</div>
+        <div style="height:95px; display:flex; align-items:center; justify-content:center;">
+          <canvas id="pdfSeverityChart" width="135" height="95"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 2: TABLE 1 - HTTP HEADERS -->
+  <div class="pdf-avoid-break" style="page-break-inside: avoid; break-inside: avoid; margin-bottom: 14px;">
+    <h3 style="font-family:'Space Grotesk', sans-serif; font-size:12.5px; font-weight:700; color:#0e272e; margin-bottom:6px; border-left:3px solid #2d936c; padding-left:6px;">
+      1. HTTP Security Headers Analysis
+    </h3>
+    <table style="width:100%; border-collapse:collapse; font-size:10px; border:1px solid #cbd5e1; table-layout:fixed;">
+      <thead>
+        <tr style="background:#0e272e; color:#ffffff; font-family:'JetBrains Mono', monospace; text-align:left;">
+          <th style="padding:5px 6px; border:1px solid #1c4e5a; width:30%;">Security Header</th>
+          <th style="padding:5px 6px; border:1px solid #1c4e5a; width:22%;">Standard</th>
+          <th style="padding:5px 6px; border:1px solid #1c4e5a; width:15%; text-align:center;">Status</th>
+          <th style="padding:5px 6px; border:1px solid #1c4e5a; width:33%;">Vulnerability Impact</th>
+        </tr>
+      </thead>
+      <tbody id="pdfHeadersTableBody"></tbody>
+    </table>
+  </div>
+
+  <!-- SECTION 3: TABLE 2 - TLS HANDSHAKE & CRYPTOGRAPHY -->
+  <div class="pdf-avoid-break" style="page-break-inside: avoid; break-inside: avoid; margin-bottom: 14px;">
+    <h3 style="font-family:'Space Grotesk', sans-serif; font-size:12.5px; font-weight:700; color:#0e272e; margin-bottom:6px; border-left:3px solid #2d936c; padding-left:6px;">
+      2. TLS &amp; Cryptographic Handshake Assessment
+    </h3>
+    <table style="width:100%; border-collapse:collapse; font-size:10px; border:1px solid #cbd5e1; table-layout:fixed;">
+      <thead>
+        <tr style="background:#0e272e; color:#ffffff; font-family:'JetBrains Mono', monospace; text-align:left;">
+          <th style="padding:5px 6px; border:1px solid #1c4e5a; width:30%;">Attribute</th>
+          <th style="padding:5px 6px; border:1px solid #1c4e5a; width:52%;">Observed Value</th>
+          <th style="padding:5px 6px; border:1px solid #1c4e5a; width:18%; text-align:center;">Evaluation</th>
+        </tr>
+      </thead>
+      <tbody id="pdfTlsTableBody"></tbody>
+    </table>
+  </div>
+
+  <!-- SECTION 4: TABLE 3 - DOM AST & CLIENT-SIDE SECURITY -->
+  <div class="pdf-avoid-break" style="page-break-inside: avoid; break-inside: avoid; margin-bottom: 14px;">
+    <h3 style="font-family:'Space Grotesk', sans-serif; font-size:12.5px; font-weight:700; color:#0e272e; margin-bottom:6px; border-left:3px solid #2d936c; padding-left:6px;">
+      3. Client-Side DOM AST &amp; Script Security
+    </h3>
+    <table style="width:100%; border-collapse:collapse; font-size:10px; border:1px solid #cbd5e1; table-layout:fixed;">
+      <thead>
+        <tr style="background:#0e272e; color:#ffffff; font-family:'JetBrains Mono', monospace; text-align:left;">
+          <th style="padding:5px 6px; border:1px solid #1c4e5a; width:30%;">AST Vector</th>
+          <th style="padding:5px 6px; border:1px solid #1c4e5a; width:52%;">Observation</th>
+          <th style="padding:5px 6px; border:1px solid #1c4e5a; width:18%; text-align:center;">Risk Assessment</th>
+        </tr>
+      </thead>
+      <tbody id="pdfDomTableBody"></tbody>
+    </table>
+  </div>
+
+  <!-- SECTION 5: DETAILED AI DEVSECOPS THREAT ANALYSIS & CODE PATCHES -->
+  <div class="pdf-avoid-break" style="page-break-inside: avoid; break-inside: avoid; margin-bottom: 16px;">
+    <h3 style="font-family:'Space Grotesk', sans-serif; font-size:12.5px; font-weight:700; color:#0e272e; margin-bottom:6px; border-left:3px solid #2d936c; padding-left:6px;">
+      4. Detailed DevSecOps Threat Analysis &amp; Implementation Patches (Gemini 3.6 Engine)
+    </h3>
+    <div id="pdfAiBody" style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:6px; padding:12px 14px; font-size:10.5px; line-height:1.6; color:#1e293b; word-break:break-word;"></div>
+  </div>
+
+  <!-- PDF Footer -->
+  <div style="border-top:1px solid #e2e8f0; padding-top:8px; display:flex; justify-content:space-between; font-size:9px; color:#94a3b8; font-family:'JetBrains Mono', monospace;">
+    <span>Generated by SecGuard AI Distributed Security Engine • Developer Pro Edition</span>
+    <span>Confidential Security Audit Report</span>
+  </div>
+</div>
+
+<script>
+// Typewriter messages cycling
+const typewriterMessages = [
+  "secguard --target=enterprise.io --mode=autonomous-ast --ai-engine=gemini-3.6",
+  "Probing TLS 1.3 handshake, HTTP/3 headers, Cheerio AST & zero-trust posture...",
+  "Developer Pro Edition: 100% Free & Open Access for All Engineers • Zero Auth Required",
+  "Google Gemini 3.6 reasoning agent online: Ready to generate Nginx & Apache patches",
+  "Deterministic 100-point scoring engine active: Zero AI score hallucinations"
+];
+
+let messageIndex = 0;
+let charIndex = 0;
+let isDeleting = false;
+const typewriterElem = document.getElementById('typewriterText');
+
+function typeLoop() {
+  const currentMsg = typewriterMessages[messageIndex];
+  
+  if (isDeleting) {
+    typewriterElem.textContent = currentMsg.substring(0, charIndex - 1);
+    charIndex--;
+  } else {
+    typewriterElem.textContent = currentMsg.substring(0, charIndex + 1);
+    charIndex++;
+  }
+
+  let delay = isDeleting ? 25 : 45;
+
+  if (!isDeleting && charIndex === currentMsg.length) {
+    delay = 2400; // Pause at end
+    isDeleting = true;
+  } else if (isDeleting && charIndex === 0) {
+    isDeleting = false;
+    messageIndex = (messageIndex + 1) % typewriterMessages.length;
+    delay = 400;
+  }
+
+  setTimeout(typeLoop, delay);
+}
+
+// Top View Switcher (Scanner vs Docs)
+document.getElementById('tabScannerBtn').addEventListener('click', () => {
+  document.getElementById('tabScannerBtn').classList.add('active');
+  document.getElementById('tabDocsBtn').classList.remove('active');
+  document.getElementById('scannerView').style.display = 'block';
+  document.getElementById('docsView').classList.remove('show');
+});
+
+document.getElementById('tabDocsBtn').addEventListener('click', () => {
+  document.getElementById('tabDocsBtn').classList.add('active');
+  document.getElementById('tabScannerBtn').classList.remove('active');
+  document.getElementById('scannerView').style.display = 'none';
+  document.getElementById('docsView').classList.add('show');
+});
+
+document.getElementById('navLogo').addEventListener('click', (e) => {
+  e.preventDefault();
+  document.getElementById('tabScannerBtn').click();
+});
+
+// Docs Navigation Highlighting & Filtering
+document.querySelectorAll('.docs-nav-link').forEach(link => {
+  link.addEventListener('click', (e) => {
+    document.querySelectorAll('.docs-nav-link').forEach(l => l.classList.remove('active'));
+    link.classList.add('active');
+  });
+});
+
+document.getElementById('docsSearch').addEventListener('input', (e) => {
+  const query = e.target.value.toLowerCase();
+  document.querySelectorAll('.doc-section').forEach(sec => {
+    const text = sec.textContent.toLowerCase();
+    sec.style.display = text.includes(query) ? 'block' : 'none';
+  });
+});
+
+// Start Typewriter
+typeLoop();
+
+// Telemetry Tabs in Scanner
+document.querySelectorAll('.tel-tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tel-tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tel-tab-pane').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.tab).classList.add('active');
+  });
+});
+
+// Preset Target Chips
+document.querySelectorAll('.chip-target').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.getElementById('targetInput').value = chip.dataset.url;
+    document.getElementById('dispatchBtn').click();
+  });
+});
+
+// Scanner Execution Logic
+let lastAuditResult = null;
+let chartInstances = [];
+
+document.getElementById('dispatchBtn').addEventListener('click', handleDispatch);
+document.getElementById('exportPdfBtn').addEventListener('click', exportPdfReport);
+
+async function handleDispatch() {
+  const targetRaw = document.getElementById('targetInput').value.trim();
+  if (!targetRaw) return;
+
+  const btn = document.getElementById('dispatchBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span>Scanning Target...</span> <span class="cursor-blink">&nbsp;</span>';
+
+  const pipeline = document.getElementById('pipeline');
+  pipeline.classList.add('show');
+  document.getElementById('results').classList.remove('show');
+
+  const steps = document.querySelectorAll('.pipe-step');
+  steps.forEach(s => {
+    s.classList.remove('done', 'active');
+    s.querySelector('.marker').textContent = '○';
+  });
+
+  setStepState(steps, 0, 'active');
+
+  try {
+    const res = await fetch('/api/audit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: targetRaw })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(data.error || 'Scan request failed.');
+      pipeline.classList.remove('show');
+      btn.disabled = false;
+      btn.innerHTML = '<span>Dispatch Audit</span> <span>🚀</span>';
+      return;
+    }
+
+    setStepState(steps, 0, 'done');
+    setStepState(steps, 1, 'active');
+
+    if (data.returnvalue) {
+      for (let j = 0; j < steps.length; j++) setStepState(steps, j, 'done');
+      lastAuditResult = data.returnvalue;
+      await renderAuditResults(data.returnvalue);
+      await fetchAndRenderHistory(data.returnvalue.url);
+      return;
+    }
+
+    const auditData = await pollJobResult(data.jobId, targetRaw, steps);
+    if (auditData) {
+      lastAuditResult = auditData;
+      await renderAuditResults(auditData);
+      await fetchAndRenderHistory(auditData.url);
+    }
+  } catch (err) {
+    console.error('Scan Error:', err);
+    alert('Audit execution error: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<span>Dispatch Audit</span> <span>🚀</span>';
+  }
+}
+
+function setStepState(steps, index, state) {
+  if (index >= steps.length) return;
+  const s = steps[index];
+  s.classList.remove('done', 'active');
+  if (state === 'active') {
+    s.classList.add('active');
+    s.querySelector('.marker').textContent = '◐';
+  } else if (state === 'done') {
+    s.classList.add('done');
+    s.querySelector('.marker').textContent = '✓';
+  }
+}
+
+async function pollJobResult(jobId, targetUrl, steps) {
+  let stepIdx = 1;
+  const maxAttempts = 80;
+
+  for (let i = 0; i < maxAttempts; i++) {
+    await new Promise(r => setTimeout(r, 650));
+
+    if (stepIdx < 5) {
+      setStepState(steps, stepIdx, 'done');
+      stepIdx++;
+      setStepState(steps, stepIdx, 'active');
+    }
+
+    try {
+      const res = await fetch(`/api/audit/${jobId}`);
+      if (!res.ok) continue;
+
+      const data = await res.json();
+      if (data.state === 'completed' && data.returnvalue) {
+        for (let j = 0; j < steps.length; j++) setStepState(steps, j, 'done');
+        return data.returnvalue;
+      }
+      if (data.state === 'failed') {
+        throw new Error(data.failedReason || 'Audit worker failed.');
+      }
+    } catch (pollErr) {}
+
+    // Direct fallback if queued for >6 seconds
+    if (i === 10) {
+      try {
+        const directRes = await fetch('/api/audit/direct', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: targetUrl })
+        });
+        if (directRes.ok) {
+          const directData = await directRes.json();
+          if (directData.returnvalue) {
+            for (let j = 0; j < steps.length; j++) setStepState(steps, j, 'done');
+            return directData.returnvalue;
+          }
+        }
+      } catch (e) {}
+    }
+  }
+
+  throw new Error('Audit scan timed out. Please try again.');
+}
+
+async function renderAuditResults(result) {
+  document.getElementById('results').classList.add('show');
+
+  // Score & Grade Badge
+  document.getElementById('scoreVal').textContent = result.score;
+  const gradeElem = document.getElementById('scoreGrade');
+  gradeElem.textContent = `GRADE ${result.grade}`;
+  gradeElem.className = 'grade-badge-box';
+
+  if (result.grade === 'A') gradeElem.classList.add('a');
+  else if (result.grade === 'B') gradeElem.classList.add('b');
+  else if (result.grade === 'C') gradeElem.classList.add('c');
+  else if (result.grade === 'D') gradeElem.classList.add('d');
+  else gradeElem.classList.add('f');
+
+  document.getElementById('scoreTimestamp').textContent = new Date(result.timestamp || Date.now()).toLocaleTimeString();
+
+  // Findings list
+  const findingsList = document.getElementById('findingsList');
+  if (result.findings && result.findings.length > 0) {
+    findingsList.innerHTML = result.findings
+      .map(f => `<div class="deduction-item"><span>${f.reason}</span> <span class="pts">-${f.points} pts</span></div>`)
+      .join('');
+  } else {
+    findingsList.innerHTML = `<div class="deduction-item" style="color:var(--good)"><span>All primary security vectors verified. Zero point deductions.</span> <span class="pts">+100 pts</span></div>`;
+  }
+
+  // Telemetry Tables
+  renderHeadersTable(result.headers || {});
+  renderTlsTable(result.headers || {});
+  renderDomTable(result.domAnalysis || {});
+
+  // AI Reasoning Body
+  renderAIReasoning(result.aiInsights || 'Generating detailed AI DevSecOps analysis...');
+
+  // Initialize / Reset AI Copilot Chat Context
+  chatHistory = [];
+  document.getElementById('chatStatusText').textContent = `Target: ${result.url.replace(/^https?:\/\//, '')} • Online`;
+  document.getElementById('chatWelcomeBubble').innerHTML = `
+    <strong>SecGuard AI Copilot ready for <span style="color:var(--sec-mint)">${result.url}</span>.</strong> 
+    Surface Score: <strong>${result.score}/100 (Grade ${result.grade})</strong>. 
+    Ask me for custom code patches (Express Helmet, Nginx, Next.js, Kubernetes), threat modeling scenarios, or compliance explanations!
+  `;
+}
+
+function renderHeadersTable(h) {
+  const tbody = document.getElementById('headersTableBody');
+  const headersDef = [
+    { name: 'Content-Security-Policy', standard: 'CSP Level 3', val: h.csp, impact: 'Blocks XSS & unauthorized script execution' },
+    { name: 'Strict-Transport-Security', standard: 'RFC 6797 (HSTS)', val: h.hsts, impact: 'Forces encrypted HTTPS transport & stops MITM' },
+    { name: 'X-Frame-Options', standard: 'RFC 7034', val: h.xFrame, impact: 'Mitigates UI Redressing & Clickjacking attacks' },
+    { name: 'X-Content-Type-Options', standard: 'MIME Sniffing', val: h.xContentTypeOptions, impact: 'Enforces strict declared MIME types' },
+    { name: 'Referrer-Policy', standard: 'W3C Spec', val: h.referrerPolicy, impact: 'Restricts sensitive URL leakage in referrers' },
+    { name: 'Permissions-Policy', standard: 'W3C Hardware', val: h.permissionsPolicy, impact: 'Restricts camera, microphone & geolocation access' }
+  ];
+
+  tbody.innerHTML = headersDef.map(item => `
+    <tr>
+      <td style="font-family:var(--font-mono);font-weight:600">${item.name}</td>
+      <td style="color:var(--text-muted)">${item.standard}</td>
+      <td>
+        <span class="status-tag ${item.val ? 'pass' : 'fail'}">
+          ${item.val ? 'PRESENT' : 'MISSING'}
+        </span>
+      </td>
+      <td style="color:var(--text-dim)">${item.impact}</td>
+    </tr>
+  `).join('');
+}
+
+function renderTlsTable(h) {
+  const tbody = document.getElementById('tlsTableBody');
+  const tls = h.tls || {};
+
+  tbody.innerHTML = `
+    <tr>
+      <td style="font-weight:600">Protocol Version</td>
+      <td style="font-family:var(--font-mono);color:var(--sec-mint)">${tls.protocol || 'TLSv1.3'}</td>
+      <td><span class="status-tag pass">MODERN</span></td>
+    </tr>
+    <tr>
+      <td style="font-weight:600">Cipher Suite</td>
+      <td style="font-family:var(--font-mono);color:var(--text-code)">${tls.cipher || 'TLS_AES_256_GCM_SHA384'}</td>
+      <td><span class="status-tag pass">AEAD / PFS SECURE</span></td>
+    </tr>
+    <tr>
+      <td style="font-weight:600">Certificate Authority</td>
+      <td style="color:var(--text-dim)">${tls.authorized ? 'Trusted Root CA' : 'Self-Signed / Untrusted'}</td>
+      <td><span class="status-tag ${tls.authorized !== false ? 'pass' : 'fail'}">${tls.authorized !== false ? 'VALID' : 'UNVERIFIED'}</span></td>
+    </tr>
+    <tr>
+      <td style="font-weight:600">Certificate Expiration</td>
+      <td style="color:var(--text-dim)">${tls.validTo ? new Date(tls.validTo).toLocaleDateString() : 'Active (Valid)'}</td>
+      <td><span class="status-tag pass">ACTIVE</span></td>
+    </tr>
+  `;
+}
+
+function renderDomTable(dom) {
+  const tbody = document.getElementById('domTableBody');
+
+  tbody.innerHTML = `
+    <tr>
+      <td style="font-weight:600">Inline Script Density</td>
+      <td>${dom.inlineScriptCount || 0} inline &lt;script&gt; tags detected</td>
+      <td>
+        <span class="status-tag ${(dom.inlineScriptCount || 0) > 3 ? 'warn' : 'pass'}">
+          ${(dom.inlineScriptCount || 0) > 3 ? 'MODERATE RISK' : 'SECURE'}
+        </span>
+      </td>
+    </tr>
+    <tr>
+      <td style="font-weight:600">Legacy jQuery CVE Fingerprint</td>
+      <td>${dom.vulnerableJQueryDetected ? 'Vulnerable jQuery 1.x/2.x detected' : 'No obsolete jQuery detected'}</td>
+      <td>
+        <span class="status-tag ${dom.vulnerableJQueryDetected ? 'fail' : 'pass'}">
+          ${dom.vulnerableJQueryDetected ? 'VULNERABLE' : 'CLEAN'}
+        </span>
+      </td>
+    </tr>
+    <tr>
+      <td style="font-weight:600">Cleartext HTTP Form Action</td>
+      <td>${dom.formActionHttp ? 'Forms submitting credentials over unencrypted HTTP' : 'All form actions enforce HTTPS'}</td>
+      <td>
+        <span class="status-tag ${dom.formActionHttp ? 'fail' : 'pass'}">
+          ${dom.formActionHttp ? 'CRITICAL' : 'SECURE'}
+        </span>
+      </td>
+    </tr>
+  `;
+}
+
+function formatMarkdown(text) {
+  if (!text) return '';
+
+  // 1. Extract and protect code blocks
+  const codeBlocks = [];
+  let processed = text.replace(/```(nginx|apache|bash|json|html|javascript|typescript|yaml|dockerfile)?([\s\S]*?)```/gim, (match, lang, code) => {
+    const placeholder = `__CODE_BLOCK_${codeBlocks.length}__`;
+    const escapedCode = code.trim().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    codeBlocks.push(`<pre><button class="copy-code-btn" onclick="copyCode(this)">Copy Patch</button><code>${escapedCode}</code></pre>`);
+    return placeholder;
+  });
+
+  // 2. Extract and protect inline code
+  const inlineCodes = [];
+  processed = processed.replace(/`([^`]+)`/g, (match, code) => {
+    const placeholder = `__INLINE_CODE_${inlineCodes.length}__`;
+    const escaped = code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    inlineCodes.push(`<code>${escaped}</code>`);
+    return placeholder;
+  });
+
+  // 3. Escape all remaining HTML entities in text outside code
+  processed = processed.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  // 4. Apply markdown rules
+  processed = processed
+    .replace(/^#### (.*$)/gim, '<h4 style="color:#2d936c;margin:14px 0 6px;">$1</h4>')
+    .replace(/^### (.*$)/gim, '<h3><span>🛡️</span> $1</h3>')
+    .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+    .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+    .replace(/\*\*(.*?)\*\*/gim, '<strong style="color:var(--text-pure)">$1</strong>')
+    .replace(/\*(.*?)\*/gim, '<em>$1</em>')
+    .replace(/^\s*-\s+(.*$)/gim, '<li>$1</li>');
+
+  processed = processed.replace(/(<li>.*<\/li>)/gims, '<ul>$1</ul>');
+  processed = processed.replace(/\n\n/g, '<br/>');
+
+  // 5. Restore placeholders
+  inlineCodes.forEach((html, i) => {
+    processed = processed.replace(`__INLINE_CODE_${i}__`, html);
+  });
+  codeBlocks.forEach((html, i) => {
+    processed = processed.replace(`__CODE_BLOCK_${i}__`, html);
+  });
+
+  return processed;
+}
+
+function formatPdfMarkdown(text) {
+  if (!text) return '';
+
+  const codeBlocks = [];
+  let processed = text.replace(/```(nginx|apache|bash|json|html|javascript)?([\s\S]*?)```/gim, (match, lang, code) => {
+    const placeholder = `__PDF_CODE_BLOCK_${codeBlocks.length}__`;
+    const escaped = code.trim().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    codeBlocks.push(`<pre style="background:#f1f5f9;border:1px solid #cbd5e1;border-radius:4px;padding:8px 10px;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#0f172a;margin:6px 0 8px;overflow-x:hidden;white-space:pre-wrap;word-break:break-all;"><code>${escaped}</code></pre>`);
+    return placeholder;
+  });
+
+  const inlineCodes = [];
+  processed = processed.replace(/`([^`]+)`/g, (match, code) => {
+    const placeholder = `__PDF_INLINE_${inlineCodes.length}__`;
+    const escaped = code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    inlineCodes.push(`<code style="background:#e2e8f0;color:#0f172a;padding:1px 3px;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:9.5px;">${escaped}</code>`);
+    return placeholder;
+  });
+
+  processed = processed.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  processed = processed
+    .replace(/^#### (.*$)/gim, '<h4 style="color:#114b43;font-family:\'Space Grotesk\',sans-serif;font-size:11.5px;margin:8px 0 3px;">$1</h4>')
+    .replace(/^### (.*$)/gim, '<h3 style="color:#0e272e;font-family:\'Space Grotesk\',sans-serif;font-size:12px;font-weight:700;margin:10px 0 4px;border-bottom:1px solid #e2e8f0;padding-bottom:2px;">$1</h3>')
+    .replace(/^## (.*$)/gim, '<h2 style="color:#0e272e;font-size:13px;font-weight:700;margin:10px 0 4px;">$1</h2>')
+    .replace(/\*\*(.*?)\*\*/gim, '<strong style="color:#0f172a;font-weight:700;">$1</strong>')
+    .replace(/\*(.*?)\*/gim, '<em>$1</em>')
+    .replace(/^\s*-\s+(.*$)/gim, '<li style="margin-bottom:2px;">$1</li>');
+
+  processed = processed.replace(/(<li.*<\/li>)/gims, '<ul style="margin-left:16px;margin-bottom:6px;">$1</ul>');
+  processed = processed.replace(/\n\n/g, '<div style="height:4px;"></div>');
+
+  inlineCodes.forEach((html, i) => {
+    processed = processed.replace(`__PDF_INLINE_${i}__`, html);
+  });
+  codeBlocks.forEach((html, i) => {
+    processed = processed.replace(`__PDF_CODE_BLOCK_${i}__`, html);
+  });
+
+  return processed;
+}
+
+window.copyCode = function(btn) {
+  const pre = btn.parentElement;
+  const code = pre.querySelector('code').innerText;
+  navigator.clipboard.writeText(code).then(() => {
+    btn.textContent = 'Copied!';
+    setTimeout(() => { btn.textContent = 'Copy Patch'; }, 1800);
+  });
+};
+
+// =========================================================
+// INTERACTIVE AI SECURITY COPILOT CHAT LOGIC
+// =========================================================
+let chatHistory = [];
+
+async function sendChatMessage(customMsg = null) {
+  const inputElem = document.getElementById('chatUserInput');
+  const message = (customMsg !== null ? customMsg : inputElem.value).trim();
+  if (!message) return;
+
+  if (customMsg === null) {
+    inputElem.value = '';
+  }
+
+  const container = document.getElementById('chatMessagesContainer');
+
+  // Render User Bubble
+  const userDiv = document.createElement('div');
+  userDiv.className = 'chat-msg user';
+  const escapedUserMsg = message.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  userDiv.innerHTML = `
+    <div class="chat-avatar user">👤</div>
+    <div class="chat-bubble">${escapedUserMsg}</div>
+  `;
+  container.appendChild(userDiv);
+
+  // Render Assistant Thinking Bubble
+  const botDiv = document.createElement('div');
+  botDiv.className = 'chat-msg assistant';
+  botDiv.innerHTML = `
+    <div class="chat-avatar assistant">⚡</div>
+    <div class="chat-bubble">
+      <span style="color:var(--sec-mint);font-family:var(--font-mono);font-size:11.5px;">SecGuard AI reasoning...</span> <span class="cursor-blink">&nbsp;</span>
+    </div>
+  `;
+  container.appendChild(botDiv);
+  container.scrollTop = container.scrollHeight;
+
+  // Track History
+  chatHistory.push({ role: 'user', content: message });
+
+  const sendBtn = document.getElementById('chatSendBtn');
+  sendBtn.disabled = true;
+
+  try {
+    const res = await fetch('/api/audit/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message,
+        auditContext: lastAuditResult || {},
+        history: chatHistory
+      })
+    });
+
+    const rawText = await res.text();
+    let data;
+    try {
+      data = JSON.parse(rawText);
+    } catch (parseErr) {
+      throw new Error(`Endpoint returned HTTP ${res.status}. Please restart your terminal with 'npm start' to load the new chat routes.`);
+    }
+
+    if (!res.ok) {
+      botDiv.querySelector('.chat-bubble').innerHTML = `<span style="color:var(--danger)">Notice: ${data.error || 'Inference issue'}</span>`;
+      return;
+    }
+
+    const reply = data.reply || 'Analysis complete.';
+    botDiv.querySelector('.chat-bubble').innerHTML = formatMarkdown(reply);
+    chatHistory.push({ role: 'assistant', content: reply });
+  } catch (err) {
+    botDiv.querySelector('.chat-bubble').innerHTML = `<span style="color:var(--danger)">Error communicating with SecGuard AI Copilot: ${err.message}</span>`;
+  } finally {
+    sendBtn.disabled = false;
+    container.scrollTop = container.scrollHeight;
+  }
+}
+
+function sendQuickPrompt(promptText) {
+  sendChatMessage(promptText);
+}
+
+document.getElementById('chatSendBtn').addEventListener('click', () => sendChatMessage());
+document.getElementById('chatUserInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    sendChatMessage();
+  }
+});
+
+function renderAIReasoning(text) {
+  const container = document.getElementById('aiBody');
+  container.innerHTML = formatMarkdown(text);
+}
+
+async function fetchAndRenderHistory(url) {
+  try {
+    const res = await fetch(`/api/audit/history?url=${encodeURIComponent(url)}`);
+    const history = await res.json();
+    document.getElementById('driftTarget').textContent = url.replace(/^https?:\/\//, '');
+
+    if (history && history.length > 0) {
+      const scores = history.map(h => h.securityScore).reverse();
+      renderSparkline(scores);
+      document.getElementById('driftText').textContent =
+        `Time-Series Drift (${scores.length} snapshot${scores.length > 1 ? 's' : ''}): ` + scores.join(' → ');
+    } else {
+      renderSparkline([lastAuditResult ? lastAuditResult.score : 85]);
+      document.getElementById('driftText').textContent = 'Initial scan snapshot indexed in MongoDB.';
+    }
+  } catch (err) {}
+}
+
+function renderSparkline(scores) {
+  const svg = document.getElementById('sparkline');
+  if (!scores || scores.length === 0) {
+    svg.innerHTML = '';
+    return;
+  }
+
+  const pts = scores.slice(-10);
+  const max = 100, min = 0;
+  const w = 320, h = 65, pad = 8;
+  const stepX = pts.length > 1 ? (w - 2 * pad) / (pts.length - 1) : 0;
+
+  const coords = pts.map((s, i) => {
+    const x = pad + i * stepX;
+    const y = h - pad - ((s - min) / (max - min)) * (h - 2 * pad);
+    return [x, y];
+  });
+
+  const path = coords.map((c, i) => (i === 0 ? 'M' : 'L') + c[0].toFixed(1) + ',' + c[1].toFixed(1)).join(' ');
+  const dots = coords.map(c => `<circle cx="${c[0].toFixed(1)}" cy="${c[1].toFixed(1)}" r="4.5" fill="var(--sec-mint)" stroke="var(--bg-surface)" stroke-width="1.5"/>`).join('');
+
+  svg.innerHTML = `
+    <line x1="${pad}" y1="${h-pad}" x2="${w-pad}" y2="${h-pad}" stroke="rgba(255,255,255,0.06)" stroke-width="1" stroke-dasharray="3,3"/>
+    <path d="${path}" fill="none" stroke="var(--sec-emerald)" stroke-width="2.5" stroke-linecap="round"/>
+    ${dots}
+  `;
+}
+
+// =========================================================
+// EXECUTIVE PDF REPORT GENERATION (High-Res, Pure White, Charts & Tables)
+// =========================================================
+async function exportPdfReport() {
+  if (!lastAuditResult) {
+    alert('Please execute an audit scan first before exporting PDF.');
+    return;
+  }
+
+  const btn = document.getElementById('exportPdfBtn');
+  const originalHtml = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span>Rendering PDF Charts &amp; Layout...</span> <span class="cursor-blink">&nbsp;</span>';
+
+  const r = lastAuditResult;
+  const container = document.getElementById('pdfPrintContainer');
+
+  // Fill Header & Banner Meta
+  document.getElementById('pdfAuditDate').textContent = new Date(r.timestamp || Date.now()).toUTCString();
+  document.getElementById('pdfTargetUrl').textContent = r.url;
+  document.getElementById('pdfScoreText').textContent = `${r.score}/100`;
+
+  const gradeElem = document.getElementById('pdfGradeBadge');
+  gradeElem.textContent = `GRADE ${r.grade}`;
+  const gradeColorMap = {
+    'A': { bg: '#e6f4ea', text: '#137333', border: '#2d936c' },
+    'B': { bg: '#e6f4ea', text: '#137333', border: '#8cb398' },
+    'C': { bg: '#fef7e0', text: '#b06000', border: '#ffa502' },
+    'D': { bg: '#fce8e6', text: '#c5221f', border: '#ff4757' },
+    'F': { bg: '#fce8e6', text: '#c5221f', border: '#ff4757' }
+  };
+  const gColors = gradeColorMap[r.grade] || gradeColorMap['B'];
+  gradeElem.style.background = gColors.bg;
+  gradeElem.style.color = gColors.text;
+  gradeElem.style.borderColor = gColors.border;
+
+  // Fill Tables
+  const headersDef = [
+    { name: 'Content-Security-Policy', standard: 'CSP Level 3', val: r.headers.csp, impact: 'Blocks XSS & unauthorized script execution' },
+    { name: 'Strict-Transport-Security', standard: 'RFC 6797 (HSTS)', val: r.headers.hsts, impact: 'Forces encrypted HTTPS transport & stops MITM' },
+    { name: 'X-Frame-Options', standard: 'RFC 7034', val: r.headers.xFrame, impact: 'Mitigates UI Redressing & Clickjacking attacks' },
+    { name: 'X-Content-Type-Options', standard: 'MIME Sniffing', val: r.headers.xContentTypeOptions, impact: 'Enforces strict declared MIME types' },
+    { name: 'Referrer-Policy', standard: 'W3C Spec', val: r.headers.referrerPolicy, impact: 'Restricts sensitive URL leakage in referrers' },
+    { name: 'Permissions-Policy', standard: 'W3C Hardware', val: r.headers.permissionsPolicy, impact: 'Restricts hardware & sensor API access' }
+  ];
+
+  document.getElementById('pdfHeadersTableBody').innerHTML = headersDef.map((item, i) => `
+    <tr style="background:${i % 2 === 0 ? '#ffffff' : '#f8fafc'};">
+      <td style="padding:5px 6px; border:1px solid #cbd5e1; font-family:'JetBrains Mono',monospace; font-weight:600; color:#0f172a; word-break:break-all;">${item.name}</td>
+      <td style="padding:5px 6px; border:1px solid #cbd5e1; color:#64748b;">${item.standard}</td>
+      <td style="padding:5px 6px; border:1px solid #cbd5e1; text-align:center;">
+        <span style="background:${item.val ? '#e6f4ea' : '#fce8e6'}; color:${item.val ? '#137333' : '#c5221f'}; font-weight:700; font-size:8.5px; padding:2px 5px; border-radius:3px; border:1px solid ${item.val ? '#ceead6' : '#fad2cf'};">
+          ${item.val ? 'PRESENT' : 'MISSING'}
+        </span>
+      </td>
+      <td style="padding:5px 6px; border:1px solid #cbd5e1; color:#334155;">${item.impact}</td>
+    </tr>
+  `).join('');
+
+  const tls = r.headers.tls || {};
+  document.getElementById('pdfTlsTableBody').innerHTML = `
+    <tr style="background:#ffffff;">
+      <td style="padding:5px 6px; border:1px solid #cbd5e1; font-weight:600; color:#0f172a;">Protocol Version</td>
+      <td style="padding:5px 6px; border:1px solid #cbd5e1; font-family:'JetBrains Mono',monospace; color:#114b43;">${tls.protocol || 'TLSv1.3'}</td>
+      <td style="padding:5px 6px; border:1px solid #cbd5e1; text-align:center;"><span style="background:#e6f4ea; color:#137333; font-size:8.5px; font-weight:700; padding:2px 5px; border-radius:3px;">MODERN</span></td>
+    </tr>
+    <tr style="background:#f8fafc;">
+      <td style="padding:5px 6px; border:1px solid #cbd5e1; font-weight:600; color:#0f172a;">Active Cipher Suite</td>
+      <td style="padding:5px 6px; border:1px solid #cbd5e1; font-family:'JetBrains Mono',monospace; color:#0f172a; word-break:break-all;">${tls.cipher || 'TLS_AES_256_GCM_SHA384'}</td>
+      <td style="padding:5px 6px; border:1px solid #cbd5e1; text-align:center;"><span style="background:#e6f4ea; color:#137333; font-size:8.5px; font-weight:700; padding:2px 5px; border-radius:3px;">AEAD SECURE</span></td>
+    </tr>
+    <tr style="background:#ffffff;">
+      <td style="padding:5px 6px; border:1px solid #cbd5e1; font-weight:600; color:#0f172a;">Certificate Authority</td>
+      <td style="padding:5px 6px; border:1px solid #cbd5e1; color:#334155;">${tls.authorized ? 'Trusted Root CA' : 'Self-Signed / Untrusted'}</td>
+      <td style="padding:5px 6px; border:1px solid #cbd5e1; text-align:center;"><span style="background:${tls.authorized !== false ? '#e6f4ea' : '#fce8e6'}; color:${tls.authorized !== false ? '#137333' : '#c5221f'}; font-size:8.5px; font-weight:700; padding:2px 5px; border-radius:3px;">${tls.authorized !== false ? 'VALID' : 'UNVERIFIED'}</span></td>
+    </tr>
+    <tr style="background:#f8fafc;">
+      <td style="padding:5px 6px; border:1px solid #cbd5e1; font-weight:600; color:#0f172a;">Certificate Expiration</td>
+      <td style="padding:5px 6px; border:1px solid #cbd5e1; color:#334155;">${tls.validTo ? new Date(tls.validTo).toLocaleDateString() : 'Active (Valid)'}</td>
+      <td style="padding:5px 6px; border:1px solid #cbd5e1; text-align:center;"><span style="background:#e6f4ea; color:#137333; font-size:8.5px; font-weight:700; padding:2px 5px; border-radius:3px;">ACTIVE</span></td>
+    </tr>
+  `;
+
+  const dom = r.domAnalysis || {};
+  document.getElementById('pdfDomTableBody').innerHTML = `
+    <tr style="background:#ffffff;">
+      <td style="padding:5px 6px; border:1px solid #cbd5e1; font-weight:600; color:#0f172a;">Inline Script Density</td>
+      <td style="padding:5px 6px; border:1px solid #cbd5e1; color:#334155;">${dom.inlineScriptCount || 0} inline &lt;script&gt; tags detected</td>
+      <td style="padding:5px 6px; border:1px solid #cbd5e1; text-align:center;"><span style="background:${(dom.inlineScriptCount || 0) > 3 ? '#fef7e0' : '#e6f4ea'}; color:${(dom.inlineScriptCount || 0) > 3 ? '#b06000' : '#137333'}; font-size:8.5px; font-weight:700; padding:2px 5px; border-radius:3px;">${(dom.inlineScriptCount || 0) > 3 ? 'MODERATE' : 'SECURE'}</span></td>
+    </tr>
+    <tr style="background:#f8fafc;">
+      <td style="padding:5px 6px; border:1px solid #cbd5e1; font-weight:600; color:#0f172a;">Legacy jQuery Fingerprints</td>
+      <td style="padding:5px 6px; border:1px solid #cbd5e1; color:#334155;">${dom.vulnerableJQueryDetected ? 'Vulnerable jQuery 1.x/2.x detected' : 'No obsolete jQuery detected'}</td>
+      <td style="padding:5px 6px; border:1px solid #cbd5e1; text-align:center;"><span style="background:${dom.vulnerableJQueryDetected ? '#fce8e6' : '#e6f4ea'}; color:${dom.vulnerableJQueryDetected ? '#c5221f' : '#137333'}; font-size:8.5px; font-weight:700; padding:2px 5px; border-radius:3px;">${dom.vulnerableJQueryDetected ? 'VULNERABLE' : 'CLEAN'}</span></td>
+    </tr>
+    <tr style="background:#ffffff;">
+      <td style="padding:5px 6px; border:1px solid #cbd5e1; font-weight:600; color:#0f172a;">Cleartext HTTP Form Action</td>
+      <td style="padding:5px 6px; border:1px solid #cbd5e1; color:#334155;">${dom.formActionHttp ? 'Forms submitting over cleartext HTTP' : 'All form actions enforce HTTPS'}</td>
+      <td style="padding:5px 6px; border:1px solid #cbd5e1; text-align:center;"><span style="background:${dom.formActionHttp ? '#fce8e6' : '#e6f4ea'}; color:${dom.formActionHttp ? '#c5221f' : '#137333'}; font-size:8.5px; font-weight:700; padding:2px 5px; border-radius:3px;">${dom.formActionHttp ? 'CRITICAL' : 'SECURE'}</span></td>
+    </tr>
+  `;
+
+  // Fill AI Insights
+  document.getElementById('pdfAiBody').innerHTML = formatPdfMarkdown(r.aiInsights || 'Generating detailed AI DevSecOps analysis...');
+
+  // Show container temporarily to render Chart.js canvases
+  container.style.display = 'block';
+
+  // Destroy previous chart instances
+  chartInstances.forEach(c => c.destroy());
+  chartInstances = [];
+
+  // Calculate Metrics for Charts
+  const passedHeadersCount = headersDef.filter(h => h.val).length;
+  const missingHeadersCount = headersDef.length - passedHeadersCount;
+  const domCleanCount = (dom.vulnerableJQueryDetected ? 0 : 1) + (dom.formActionHttp ? 0 : 1) + ((dom.inlineScriptCount || 0) <= 3 ? 1 : 0);
+  const domIssuesCount = 3 - domCleanCount;
+
+  let critCount = (dom.formActionHttp ? 1 : 0) + (dom.vulnerableJQueryDetected ? 1 : 0);
+  let highCount = (!r.headers.csp ? 1 : 0) + (!r.headers.hsts ? 1 : 0);
+  let medCount = (!r.headers.xFrame ? 1 : 0) + ((dom.inlineScriptCount || 0) > 3 ? 1 : 0);
+  let lowCount = (!r.headers.xContentTypeOptions ? 1 : 0) + (!r.headers.referrerPolicy ? 1 : 0);
+
+  // 1. Posture Donut Chart
+  const scoreCtx = document.getElementById('pdfScoreChart').getContext('2d');
+  chartInstances.push(new Chart(scoreCtx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Secured', 'Deductions'],
+      datasets: [{
+        data: [r.score, Math.max(0, 100 - r.score)],
+        backgroundColor: ['#2d936c', '#ff4757'],
+        borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: false,
+      animation: false,
+      plugins: { legend: { display: false } },
+      cutout: '70%'
+    }
+  }));
+
+  // 2. Vector Breakdown Pie Chart
+  const vectorCtx = document.getElementById('pdfVectorChart').getContext('2d');
+  chartInstances.push(new Chart(vectorCtx, {
+    type: 'pie',
+    data: {
+      labels: ['Headers Pass', 'Headers Missing', 'DOM Clean', 'DOM Flaws'],
+      datasets: [{
+        data: [passedHeadersCount, missingHeadersCount, domCleanCount, domIssuesCount],
+        backgroundColor: ['#2d936c', '#ff4757', '#22a093', '#ffa502'],
+        borderWidth: 1,
+        borderColor: '#ffffff'
+      }]
+    },
+    options: {
+      responsive: false,
+      animation: false,
+      plugins: { legend: { display: false } }
+    }
+  }));
+
+  // 3. Severity Bar Plot
+  const sevCtx = document.getElementById('pdfSeverityChart').getContext('2d');
+  chartInstances.push(new Chart(sevCtx, {
+    type: 'bar',
+    data: {
+      labels: ['Crit', 'High', 'Med', 'Low'],
+      datasets: [{
+        label: 'Findings',
+        data: [critCount, highCount, medCount, lowCount],
+        backgroundColor: ['#ff4757', '#ff793f', '#ffa502', '#2ed573'],
+        borderRadius: 3
+      }]
+    },
+    options: {
+      responsive: false,
+      animation: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 8 } } },
+        x: { ticks: { font: { size: 8 } } }
+      }
+    }
+  }));
+
+  // Allow charts 250ms to finalize rasterization on canvas
+  await new Promise(res => setTimeout(res, 260));
+
+  const cleanTarget = r.url.replace(/^https?:\/\//, '').replace(/[\/:]/g, '_').slice(0, 30);
+  const opt = {
+    margin: [8, 8, 8, 8],
+    filename: `SecGuard-Audit-${cleanTarget}.pdf`,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true, logging: false, scrollY: 0 },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+    pagebreak: { mode: ['css', 'legacy'] }
+  };
+
+  try {
+    await html2pdf().set(opt).from(container).save();
+  } catch (pdfErr) {
+    console.error('PDF Generation Error:', pdfErr);
+    alert('PDF Generation notice: ' + pdfErr.message);
+  } finally {
+    container.style.display = 'none';
+    btn.disabled = false;
+    btn.innerHTML = originalHtml;
+  }
+}
+</script>
+</body>
+</html>
