@@ -3,6 +3,7 @@ const { analyzeDOMContent } = require('./domAnalyzer');
 const { analyzeHeadersAndTLS } = require('./headerAnalyzer');
 const { generateAIEngineeredInsights } = require('./aiAgent');
 const { calculateDeterministicScore, gradeFromScore } = require('./scoringEngine');
+const { normalizeAuditUrl } = require('./auditUrl');
 const { AuditResult } = require('../models/schema');
 
 async function ensureDBConnection() {
@@ -48,6 +49,8 @@ async function executeAuditScan(url, userId = null) {
     domAnalysis
   });
 
+  const timestamp = new Date();
+  const historyUrl = normalizeAuditUrl(normalizedUrl);
   let auditId = 'audit_' + Date.now();
   const dbConnected = await ensureDBConnection();
 
@@ -57,6 +60,8 @@ async function executeAuditScan(url, userId = null) {
       const result = await AuditResult.create({
         userId: validUserId,
         url: normalizedUrl,
+        normalizedUrl: historyUrl,
+        timestamp,
         securityScore: score,
         grade,
         aiInsights,
@@ -84,7 +89,7 @@ async function executeAuditScan(url, userId = null) {
     headers: headerResult,
     ssl: headerResult.tls,
     domAnalysis,
-    timestamp: new Date().toISOString()
+    timestamp: timestamp.toISOString()
   };
 }
 

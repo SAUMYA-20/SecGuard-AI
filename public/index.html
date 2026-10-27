@@ -2400,7 +2400,11 @@ function renderAIReasoning(text) {
 async function fetchAndRenderHistory(url) {
   try {
     const res = await fetch(`/api/audit/history?url=${encodeURIComponent(url)}`);
-    const history = await res.json();
+    const response = await res.json();
+    if (!res.ok) {
+      throw new Error(response.error || `History request failed with HTTP ${res.status}`);
+    }
+    const history = response;
     document.getElementById('driftTarget').textContent = url.replace(/^https?:\/\//, '');
 
     if (history && history.length > 0) {
@@ -2412,7 +2416,10 @@ async function fetchAndRenderHistory(url) {
       renderSparkline([lastAuditResult ? lastAuditResult.score : 85]);
       document.getElementById('driftText').textContent = 'Initial scan snapshot indexed in MongoDB.';
     }
-  } catch (err) {}
+  } catch (err) {
+    console.error('[history] Failed to load posture drift history:', err);
+    document.getElementById('driftText').textContent = 'Posture drift history is currently unavailable.';
+  }
 }
 
 function renderSparkline(scores) {

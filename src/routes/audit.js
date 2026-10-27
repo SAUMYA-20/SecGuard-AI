@@ -2,8 +2,9 @@ const express = require('express');
 const mongoose = require('mongoose');
 const { dispatchAuditJob, getJobStatus } = require('../queue/auditQueue');
 const { executeAuditScan } = require('../services/auditRunner');
+const { normalizeAuditUrl } = require('../services/auditUrl');
 const { tierRateLimiter, getOrCreateUser } = require('../middleware/rateLimiter');
-const { AuditResult, User } = require('../models/schema');
+const { AuditResult } = require('../models/schema');
 
 const router = express.Router();
 
@@ -77,20 +78,6 @@ router.post('/audit/direct', tierRateLimiter, async (req, res) => {
   }
 });
 
-// GET /api/audit/:jobId — poll BullMQ / in-memory job status
-router.get('/audit/:jobId', async (req, res) => {
-  const { jobId } = req.params;
-  try {
-    const status = await getJobStatus(jobId);
-    if (!status) {
-      return res.status(404).json({ error: 'Job not found', jobId });
-    }
-    res.json(status);
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to get job status', detail: err.message });
-  }
-});
-
 // GET /api/audit/result/:auditId — fetch full persisted audit document
 router.get('/audit/result/:auditId', async (req, res) => {
   try {
@@ -108,30 +95,78 @@ router.get('/audit/result/:auditId', async (req, res) => {
 // GET /api/audit/history — historical drift timeline
 router.get('/audit/history/:userId?', async (req, res) => {
   try {
-    const { userId } = req.params;
+    const requestedUserId = req.params.userId || req.query.userId;
     const { url } = req.query;
     const filter = {};
 
-    if (userId && mongoose.Types.ObjectId.isValid(userId)) {
-      filter.userId = userId;
-    }
-    if (url) {
-      filter.url = normalizeUrl(url);
+    if (requestedUserId && !mongoose.Types.ObjectId.isValid(requestedUserId)) {
+      return res.status(400).json({ error: 'Invalid userId format' });
     }
 
     if (mongoose.connection.readyState !== 1) {
-      return res.json([]);
+      return res.status(503).json({ error: 'Database not connected' });
+    }
+
+    const user = requestedUserId
+      ? { _id: requestedUserId }
+      : await getOrCreateUser(undefined, 'developer');
+    filter.userId = user._id;
+
+    if (url) {
+      let historyUrl;
+      try {
+        historyUrl = normalizeAuditUrl(url);
+      } catch (err) {
+        return res.status(400).json({ error: 'Target must be a valid URL' });
+      }
+
+      const legacyUrl = normalizeUrl(url);
+      filter.$or = [
+        { normalizedUrl: historyUrl },
+        { url: legacyUrl },
+        { url: historyUrl }
+      ];
     }
 
     const history = await AuditResult.find(filter)
-      .sort({ timestamp: -1 })
+      .sort({ timestamp: -1, _id: -1 })
       .limit(30)
-      .select('url securityScore grade deductions timestamp status');
+      .select('url securityScore grade deductions timestamp status')
+      .lean();
 
-    res.json(history);
+    const timeline = history.map((entry, index) => {
+      const olderEntry = history[index + 1];
+      const deltaScore = olderEntry
+        ? Number((entry.securityScore - olderEntry.securityScore).toFixed(2))
+        : 0;
+
+      return {
+        ...entry,
+        deltaScore,
+        trend: olderEntry
+          ? (deltaScore > 0 ? 'improved' : deltaScore < 0 ? 'declined' : 'stable')
+          : 'baseline'
+      };
+    });
+
+    res.json(timeline);
   } catch (err) {
-    console.warn('[routes/audit] History lookup notice:', err.message);
-    res.json([]);
+    console.error('[routes/audit] History lookup failed:', err.message);
+    res.status(500).json({ error: 'Failed to retrieve audit history', detail: err.message });
+  }
+});
+
+// GET /api/audit/:jobId — poll BullMQ / in-memory job status
+router.get('/audit/:jobId', async (req, res) => {
+  const { jobId } = req.params;
+  try {
+    const status = await getJobStatus(jobId);
+    if (!status) {
+      return res.status(404).json({ error: 'Job not found', jobId });
+    }
+    res.json(status);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to get job status', detail: err.message });
   }
 });
 
